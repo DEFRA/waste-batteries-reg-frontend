@@ -62,6 +62,15 @@ services:
       REGISTRATIONS_STORE_ENGINE: dynamodb
       AWS_DYNAMODB_REGISTRATIONS_TABLE_NAME: cdp-defra-id-stub-registrations
       DYNAMODB_ENDPOINT: http://floci:4566
+    # ensure discovery document while starting up
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://localhost:3200/cdp-defra-id-stub/.well-known/openid-configuration || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     networks:
       - cdp-tenant
 
@@ -81,14 +90,13 @@ services:
       redis:
         condition: service_started
       cdp-defra-id-stub:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - 'compose/aws.env'
     environment:
       PORT: 3000
       NODE_ENV: production
       REDIS_HOST: redis
-      LOG_FORMAT: pino-pretty
       SESSION_COOKIE_SECURE: false
       USE_SINGLE_INSTANCE_CACHE: true
       REDIS_TLS: false

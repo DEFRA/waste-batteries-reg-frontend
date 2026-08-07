@@ -25,6 +25,7 @@ describe('#getOidcConfig', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.useRealTimers()
   })
 
   test('Should fetch and return the discovery document', async () => {
@@ -46,16 +47,38 @@ describe('#getOidcConfig', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  test('Should throw when the discovery request fails', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(null, { status: 503 }))
-    )
+  test('Should retry and succeed when the provider is not ready yet', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockImplementation(() => Response.json(validDoc))
+    vi.stubGlobal('fetch', fetchMock)
     const getOidcConfig = await importGetOidcConfig()
 
-    await expect(getOidcConfig()).rejects.toThrow(
+    vi.useFakeTimers()
+    const result = getOidcConfig()
+    await vi.runAllTimersAsync()
+
+    expect(await result).toEqual(validDoc)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  test('Should throw when the discovery request fails on every attempt', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 503 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const getOidcConfig = await importGetOidcConfig()
+
+    vi.useFakeTimers()
+    const assertion = expect(getOidcConfig()).rejects.toThrow(
       'Defra ID discovery failed: 503'
     )
+    await vi.runAllTimersAsync()
+
+    await assertion
+    expect(fetchMock).toHaveBeenCalledTimes(5)
   })
 
   test('Should throw when a required endpoint is missing', async () => {

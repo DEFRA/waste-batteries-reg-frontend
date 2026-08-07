@@ -101,6 +101,14 @@ npm run git:hooks
 
 ### Development
 
+To run everything in docker, you can use:
+
+```bash
+docker compose up -d
+```
+
+To run the application in development mode without docker, you will need to have the following services running locally:
+
 The app authenticates with Defra ID and fetches its OIDC configuration at
 startup, so start the local [Defra ID stub](#defra-id-authentication) first:
 
@@ -135,7 +143,7 @@ curl -H "Content-Type: application/json" -X POST \
     "loa": "1",
     "aal": "1",
     "enrolmentCount": 1,
-    "enrolmentRequestCount": 0,
+    "enrolmentRequestCount": 1,
     "relationships": [
       {
         "organisationName": "Acme Waste Ltd",
