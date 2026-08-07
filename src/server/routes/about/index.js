@@ -12,6 +12,8 @@ export const about = {
         {
           method: 'GET',
           path: '/about',
+          // Public page — renders signed in or out, nav reflects auth state
+          options: { auth: { mode: 'try' } },
           ...aboutController
         }
       ])

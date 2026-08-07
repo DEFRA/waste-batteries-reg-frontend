@@ -14,6 +14,20 @@ const manifestPath = path.join(
 
 let viteManifest
 
+// The session cookie strategy puts the whole cached session in credentials.
+// Expose only what views need — never token contents.
+function buildAuthContext(request) {
+  if (!request?.auth?.isAuthenticated) {
+    return { isAuthenticated: false }
+  }
+
+  return {
+    isAuthenticated: true,
+    displayName: request.auth.credentials?.displayName,
+    organisationName: request.auth.credentials?.organisationName
+  }
+}
+
 export function context(request) {
   if (config.get('isProduction') && !viteManifest) {
     try {
@@ -27,6 +41,7 @@ export function context(request) {
     assetPath: `${assetPath}/assets`,
     serviceName: config.get('serviceName'),
     serviceUrl: '/',
+    auth: buildAuthContext(request),
     breadcrumbs: [],
     navigation: buildNavigation(request),
     getAssetPath(asset) {

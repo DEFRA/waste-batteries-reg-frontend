@@ -1,0 +1,17 @@
+{% extends 'layouts/page.njk' %}
+
+{% block content %}
+  {{ appHeading({
+    text: heading
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+        <p>This might be because you cancelled sign in, or because of a temporary problem.</p>
+        <p><a class="govuk-link" href="/auth/sign-in">Try signing in again</a></p>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
