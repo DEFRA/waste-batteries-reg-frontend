@@ -1,4 +1,3 @@
-version: '3.4'
 services:
   floci:
     image: hectorvent/floci:latest-aws
@@ -30,7 +29,7 @@ services:
       - ./compose/mongo:/docker-entrypoint-initdb.d:ro
       - mongodb-data:/data
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.hello().ok"]
+      test: ['CMD', 'mongosh', '--eval', 'db.hello().ok']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -38,10 +37,13 @@ services:
 
   ################################################################################
 
-  your-frontend:
-    build: ./
+  # Local Defra ID stub — the app's defraId.discoveryUrl points here by default.
+  # Registrations are stored in DynamoDB (floci); the table is created by
+  # compose/floci/start.d/20-create-defra-id-stub-table.sh
+  cdp-defra-id-stub:
+    image: defradigital/cdp-defra-id-stub:latest
     ports:
-      - '3000:3000'
+      - '3200:3200'
     links:
       - 'floci:floci'
       - 'redis:redis'
@@ -53,17 +55,65 @@ services:
     env_file:
       - 'compose/aws.env'
     environment:
-      PORT: 3000
-      NODE_ENV: production
+      PORT: 3200
+      NODE_ENV: development
       REDIS_HOST: redis
-      LOG_FORMAT: pino-pretty
-      SESSION_COOKIE_SECURE: false
       USE_SINGLE_INSTANCE_CACHE: true
-      REDIS_TLS: false
+      REGISTRATIONS_STORE_ENGINE: dynamodb
+      AWS_DYNAMODB_REGISTRATIONS_TABLE_NAME: cdp-defra-id-stub-registrations
+      DYNAMODB_ENDPOINT: http://floci:4566
+    # ensure discovery document while starting up
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://localhost:3200/cdp-defra-id-stub/.well-known/openid-configuration || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     networks:
       - cdp-tenant
 
-  # your-backend:
+  ################################################################################
+
+  frontend:
+    build: ./
+    ports:
+      - '3000:3000'
+    links:
+      - 'floci:floci'
+      - 'redis:redis'
+      - 'cdp-defra-id-stub:cdp-defra-id-stub'
+    depends_on:
+      floci:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      cdp-defra-id-stub:
+        condition: service_healthy
+    env_file:
+      - 'compose/aws.env'
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      REDIS_HOST: redis
+      SESSION_COOKIE_SECURE: false
+      USE_SINGLE_INSTANCE_CACHE: true
+      REDIS_TLS: false
+    # cdp-defra-id-stub's well-known document advertises its endpoints as
+    # http://localhost:3200 (its own default `appBaseUrl`). That's correct
+    # for the browser (compose publishes 3200:3200 on the host), but from
+    # inside this container "localhost" would otherwise mean itself, not the
+    # stub. Rewriting it to the host gateway routes container-side calls
+    # (discovery, token exchange, JWKS fetch) back through the same
+    # published port — so the config default discovery URL works unmodified
+    # in both local dev modes.
+    extra_hosts:
+      - 'localhost:host-gateway'
+    networks:
+      - cdp-tenant
+
+  # backend:
   #   image: defradigital/your-backend:${YOUR_BACKEND_VERSION:-latest}
   #   ports:
   #     - '3555:3555'

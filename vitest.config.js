@@ -5,6 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     clearMocks: true,
+    setupFiles: ['./test-helpers/oidc-stub.js'],
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',

@@ -7,6 +7,8 @@ export const health = {
       server.route({
         method: 'GET',
         path: '/health',
+        // Platform probe — must stay public
+        options: { auth: false },
         ...healthController
       })
     }

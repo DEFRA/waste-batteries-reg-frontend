@@ -94,9 +94,13 @@ export const config = convict({
     redact: {
       doc: 'Log paths to redact',
       format: Array,
-      default: isProduction
-        ? ['req.headers.authorization', 'req.headers.cookie', 'res.headers']
-        : [],
+      // Redacted in every environment — auth headers and cookies now carry
+      // session material, which must never reach logs
+      default: [
+        'req.headers.authorization',
+        'req.headers.cookie',
+        'res.headers'
+      ],
       env: 'LOG_REDACT'
     }
   },
@@ -154,6 +158,62 @@ export const config = convict({
         default: isProduction,
         env: 'SESSION_COOKIE_SECURE'
       }
+    },
+    absoluteTtl: {
+      doc: 'Hard ceiling on a signed-in session, measured from sign-in; token refresh cannot extend a session past it',
+      format: Number,
+      default: fourHoursMs,
+      env: 'SESSION_ABSOLUTE_TTL'
+    }
+  },
+  defraId: {
+    discoveryUrl: {
+      doc: 'Defra ID OIDC .well-known/openid-configuration URL',
+      format: String,
+      default:
+        'http://localhost:3200/cdp-defra-id-stub/.well-known/openid-configuration',
+      env: 'DEFRA_ID_DISCOVERY_URL'
+    },
+    clientId: {
+      // The stub's built-in oidc.clientId — it hardcodes this as the `aud` of
+      // every token it issues regardless of the client_id sent, so token
+      // verification only passes when our clientId matches it
+      doc: 'Defra ID client id',
+      format: String,
+      default: '63983fc2-cfff-45bb-8ec2-959e21062b9a',
+      env: 'DEFRA_ID_CLIENT_ID'
+    },
+    clientSecret: {
+      doc: 'Defra ID client secret',
+      format: String,
+      default: 'test_value',
+      sensitive: true,
+      env: 'DEFRA_ID_CLIENT_SECRET'
+    },
+    serviceId: {
+      doc: 'Defra ID service id (non-standard OIDC param, required)',
+      format: String,
+      default: 'stub-service-id',
+      env: 'DEFRA_ID_SERVICE_ID'
+    },
+    scopes: {
+      doc: 'OAuth scopes requested at sign-in. Real Defra ID (B2C) additionally requires the client_id as a scope to issue an access token — set DEFRA_ID_SCOPES=openid,offline_access,<client_id> in real environments. The CDP stub rejects the client_id scope, hence this stub-compatible default.',
+      format: Array,
+      default: ['openid', 'offline_access'],
+      env: 'DEFRA_ID_SCOPES'
+    },
+    policy: {
+      doc: 'B2C policy, sent as the `p` provider param when set',
+      format: String,
+      nullable: true,
+      default: null,
+      env: 'DEFRA_ID_POLICY'
+    },
+    callbackBaseUrl: {
+      doc: 'Public base URL used to build both auth callback URLs, no trailing slash',
+      format: String,
+      default: 'http://localhost:3000',
+      env: 'DEFRA_ID_CALLBACK_BASE_URL'
     }
   },
   redis: {

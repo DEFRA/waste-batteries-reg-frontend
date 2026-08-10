@@ -1,6 +1,7 @@
 import path from 'path'
 import hapi from '@hapi/hapi'
 import Scooter from '@hapi/scooter'
+import crumb from '@hapi/crumb'
 
 import { router } from './plugins/router.js'
 import { config } from '#/config/config.js'
@@ -10,6 +11,9 @@ import { nunjucksConfig } from '#/config/nunjucks/nunjucks.js'
 import { requestTracing } from './plugins/request-tracing.js'
 import { requestLogger } from './plugins/request-logger.js'
 import { sessionCache } from './plugins/session-cache.js'
+import { staticAssets } from './plugins/static-assets.js'
+import { auth } from './plugins/auth.js'
+import { noStore } from './common/helpers/no-store.js'
 import { getCacheEngine } from './common/helpers/session-cache/cache-engine.js'
 import { secureContext } from '@defra/hapi-secure-context'
 import { contentSecurityPolicy } from './plugins/content-security-policy.js'
@@ -52,6 +56,14 @@ export async function createServer() {
       strictHeader: false
     }
   })
+
+  // Server-side Defra ID auth session store (memory locally, Redis in environments)
+  server.app.cache = server.cache({
+    cache: config.get('session.cache.name'),
+    segment: 'defra-id-session',
+    expiresIn: config.get('session.cache.ttl')
+  })
+
   await server.register([
     requestLogger,
     requestTracing,
@@ -59,6 +71,14 @@ export async function createServer() {
     secureContext,
     pulse,
     sessionCache,
+    staticAssets,
+    auth,
+    {
+      plugin: crumb,
+      options: {
+        cookieOptions: { isSecure: config.get('session.cookie.secure') }
+      }
+    },
     nunjucksConfig,
     Scooter,
     contentSecurityPolicy,
@@ -66,6 +86,7 @@ export async function createServer() {
   ])
 
   server.ext('onPreResponse', catchAll)
+  server.ext('onPreResponse', noStore)
 
   return server
 }

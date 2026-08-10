@@ -101,11 +101,80 @@ npm run git:hooks
 
 ### Development
 
-To run the application in `development` mode run:
+To run everything in docker, you can use:
+
+```bash
+docker compose up -d
+```
+
+To run the application in development mode without docker, you will need to have the following services running locally:
+
+The app authenticates with Defra ID and fetches its OIDC configuration at
+startup, so start the local [Defra ID stub](#defra-id-authentication) first:
+
+```bash
+docker compose up -d cdp-defra-id-stub
+```
+
+Then run the application in `development` mode:
 
 ```bash
 npm run dev
 ```
+
+### Defra ID (authentication)
+
+This service signs users in with Defra ID (see [specs/defra-id.md](specs/defra-id.md)).
+Locally it uses the [cdp-defra-id-stub](https://github.com/DEFRA/cdp-defra-id-stub),
+which `docker compose up -d cdp-defra-id-stub` starts on port `3200` along with
+its dependencies (Redis and DynamoDB via floci). All `defraId` config defaults
+point at the stub — no environment setup needed.
+
+Create a test user either through the stub's UI (you are redirected there on
+sign-in) or via its API:
+
+```bash
+curl -H "Content-Type: application/json" -X POST \
+  -d '{
+    "userId": "86a7607c-a1e7-41e5-a0b6-a41680d05a2a",
+    "email": "jo.bloggs@example.com",
+    "firstName": "Jo",
+    "lastName": "Bloggs",
+    "loa": "1",
+    "aal": "1",
+    "enrolmentCount": 1,
+    "enrolmentRequestCount": 1,
+    "relationships": [
+      {
+        "organisationName": "Acme Waste Ltd",
+        "relationshipRole": "Employee",
+        "roleName": "user",
+        "roleStatus": "3"
+      }
+    ]
+  }' \
+  http://localhost:3200/cdp-defra-id-stub/API/register
+```
+
+To test token refresh without waiting for expiry, force it:
+
+```bash
+curl -X POST http://localhost:3200/cdp-defra-id-stub/API/register/86a7607c-a1e7-41e5-a0b6-a41680d05a2a/expire
+```
+
+Manual journey checklist after auth changes:
+
+- Sign in from the header link; land back on the page you started from
+- Header shows the user's name and organisation with a Sign out link
+- `/auth/sign-in?redirect=/about` returns to `/about` after sign-in
+- Sign out; the back button asks you to sign in again rather than showing the page
+- `/auth/sign-in-oidc?error=access_denied` shows the "could not sign you in" page
+- A user whose roles all have `roleStatus` other than `3` gets the no-access page
+  on any scope-protected route
+
+In deployed environments the identity provider is set per environment:
+the CDP-hosted stub in `dev`, real Defra ID in `test`, `perf-test` and `prod` —
+via the `DEFRA_ID_*` environment variables and CDP service secrets.
 
 ### Production
 

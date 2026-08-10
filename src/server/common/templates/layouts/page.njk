@@ -35,6 +35,19 @@
   {{ govukServiceNavigation({
     navigation: navigation
   }) }}
+
+  <div class="govuk-width-container">
+    {% if auth.isAuthenticated %}
+      <p class="govuk-body-s govuk-!-margin-top-2" data-testid="app-signed-in-user">
+        {{ auth.displayName }}{% if auth.organisationName %} — {{ auth.organisationName }}{% endif %} |
+        <a class="govuk-link" href="/auth/sign-out">Sign out</a>
+      </p>
+    {% else %}
+      <p class="govuk-body-s govuk-!-margin-top-2">
+        <a class="govuk-link" href="/auth/sign-in">Sign in</a>
+      </p>
+    {% endif %}
+  </div>
 {% endblock %}
 
 {% block pageTitle %}

@@ -29,6 +29,16 @@ export function catchAll(request, h) {
     request.logger.error(response?.stack)
   }
 
+  // Authenticated but missing the required scope
+  if (statusCode === statusCodes.forbidden) {
+    return h
+      .view('unauthorised/no-access', {
+        pageTitle: 'You do not have access to this service',
+        heading: 'You do not have access to this service'
+      })
+      .code(statusCode)
+  }
+
   return h
     .view('error/index', {
       pageTitle: errorMessage,

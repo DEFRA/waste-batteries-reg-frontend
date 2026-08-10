@@ -57,6 +57,7 @@ describe('context and cache', () => {
       test('Should provide expected context', () => {
         expect(contextResult).toEqual({
           assetPath: '/public/assets',
+          auth: { isAuthenticated: false },
           breadcrumbs: [],
           getAssetPath: expect.any(Function),
           navigation: [
@@ -146,6 +147,7 @@ describe('context and cache', () => {
       test('Should provide expected context', () => {
         expect(contextResult).toEqual({
           assetPath: '/public/assets',
+          auth: { isAuthenticated: false },
           breadcrumbs: [],
           getAssetPath: expect.any(Function),
           navigation: [
