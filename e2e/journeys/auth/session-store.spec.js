@@ -6,6 +6,7 @@ import {
   findStoredSession
 } from '../../support/session-store.js'
 import { looksLikeAJwt } from '../../support/invariants.js'
+import { appInstances } from '../../support/app-instances.js'
 import { sessionStoreUser } from '../../support/users.js'
 
 /**
@@ -17,6 +18,9 @@ import { sessionStoreUser } from '../../support/users.js'
  * hide from, the rest of the service's Redis namespace.
  */
 const fourHoursMs = 14400000
+
+// Needs the Redis-backed instance; the default app keeps sessions in memory
+test.use({ baseURL: appInstances.sessionStore.url })
 
 test.describe.configure({ mode: 'serial' })
 

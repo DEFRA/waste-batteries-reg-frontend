@@ -6,7 +6,7 @@ import {
   expectSignedOut,
   expectRedirectToSignIn
 } from '../../support/journeys.js'
-import { pastTheCapMs } from '../../support/app-instances.js'
+import { appInstances, pastTheCapMs } from '../../support/app-instances.js'
 import { operatorUser } from '../../support/users.js'
 
 /**
@@ -17,6 +17,9 @@ import { operatorUser } from '../../support/users.js'
  * does. This instance shrinks the cap from four hours to seconds; everything
  * else about it is the default configuration.
  */
+
+// Needs the instance whose cap is seconds rather than the default four hours
+test.use({ baseURL: appInstances.shortAbsoluteTtl.url })
 
 /** Waits out the cap, counting from when the session was created. */
 function waitPastTheCap(signedInAt) {

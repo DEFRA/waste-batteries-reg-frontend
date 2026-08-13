@@ -23,6 +23,9 @@ import { containerisedUser } from '../../support/users.js'
  * Playwright does not start this one. Bring it up with `docker compose up -d`;
  * otherwise the journey skips.
  */
+// The compose service, not one of the instances Playwright starts
+test.use({ baseURL: containerisedAppUrl })
+
 async function isContainerisedAppRunning() {
   try {
     const response = await fetch(`${containerisedAppUrl}/health`)

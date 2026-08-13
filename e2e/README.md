@@ -18,7 +18,6 @@ Other entry points:
 npm run test:e2e:ui                         # Playwright's watch mode
 npm run test:e2e -- --grep @auth            # one area
 npm run test:e2e -- --grep-invert @slow     # skip the journeys that wait out a session cap
-npm run test:e2e -- --project=default-app   # one app configuration
 npm run test:e2e -- sign-in                 # one spec
 npm run test:e2e:report                     # last HTML report
 ```
@@ -41,9 +40,10 @@ different axes:
 - **What it is about** — the folder under `journeys/` and the tag on its
   `describe`. Registrations would be `journeys/registration/` tagged
   `@registration`, and `--grep @registration` would run just those.
-- **Which app it runs against** — the Playwright project. `default-app` covers
-  everything unless a spec needs an app configured differently, in which case it
-  names itself in that project's `testMatch`.
+- **Which app it runs against** — the `baseURL`. Specs use relative paths and
+  get the default instance; one that needs a differently configured app says so
+  itself, with `test.use({ baseURL: appInstances.sessionStore.url })` at the top
+  of the file.
 
 So a new area needs a folder and a tag, and nothing in
 [playwright.config.js](../playwright.config.js) unless it also needs its own app
@@ -53,16 +53,17 @@ configuration. Anything genuinely shared across areas belongs in
 ## How it is put together
 
 Some journeys need the app configured differently from the others, so each
-variant runs as its own instance on its own port and each project points at the
-instance it needs — no restarting one app with different environment variables
-part-way through a run.
+variant runs as its own instance on its own port and the spec that needs one
+points itself at it — no restarting one app with different environment variables
+part-way through a run. The instances are defined in
+[support/app-instances.js](support/app-instances.js).
 
-| Project             | Port | Why it differs                                                              |
-| ------------------- | ---- | --------------------------------------------------------------------------- |
-| `default-app`       | 3100 | Defaults. Everything unless a spec opts out.                                |
-| `redis-sessions`    | 3101 | Redis-backed sessions, so a test can read what is actually stored.          |
-| `short-session-cap` | 3102 | Absolute session cap shrunk from four hours to 20 seconds.                  |
-| `containerised-app` | 3000 | The Docker image, reached through `extra_hosts`. Not started by Playwright. |
+| Instance              | Port | Why it differs                                                              | Claimed by                     |
+| --------------------- | ---- | --------------------------------------------------------------------------- | ------------------------------ |
+| `app`                 | 3100 | Defaults. Everything that does not ask for another.                         | —                              |
+| `sessionStore`        | 3101 | Redis-backed sessions, so a test can read what is actually stored.          | `session-store.spec.js`        |
+| `shortAbsoluteTtl`    | 3102 | Absolute session cap shrunk from four hours to 20 seconds.                  | `absolute-session-ttl.spec.js` |
+| `containerisedAppUrl` | 3000 | The Docker image, reached through `extra_hosts`. Not started by Playwright. | `containerised.spec.js`        |
 
 Two routes exist only for these tests: `/e2e/protected`, which takes the
 server-wide auth default, and `/e2e/role-protected`, which also requires a role
