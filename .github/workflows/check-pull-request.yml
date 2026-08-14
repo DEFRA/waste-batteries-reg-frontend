@@ -28,7 +28,7 @@ jobs:
         run: npm run security-audit
 
       - run: |
-          npm ci
+          npm ci --ignore-scripts
           npm run build:frontend
           npm run format:check
           npm run lint
@@ -61,15 +61,18 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       # NODE_ENV=test serves built assets rather than running vite, so the
       # instances Playwright starts need .public to exist
       - name: Build frontend assets
         run: npm run build:frontend
 
+      # The lockfile's own binary, not npx: npx would resolve a version at run
+      # time and can fetch a package on demand, so the browser build would stop
+      # being pinned to the Playwright the tests actually run against
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: ./node_modules/.bin/playwright install --with-deps chromium
 
       # The journeys sign in against the real Defra ID stub, read sessions out of
       # Redis, and drive the compose `frontend` service for the containerised

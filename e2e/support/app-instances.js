@@ -21,8 +21,14 @@ export const wasteOperatorRole = 'Waste operator'
  */
 export const shortAbsoluteTtlMs = 8000
 
+/**
+ * Slack allowed for the app to notice the cap has passed, so the assertion is
+ * not racing the expiry it is waiting on.
+ */
+const capExpiryMarginMs = 1500
+
 /** Margin added to the cap before asserting the session has gone. */
-export const pastTheCapMs = shortAbsoluteTtlMs + 1500
+export const pastTheCapMs = shortAbsoluteTtlMs + capExpiryMarginMs
 
 const baseEnv = {
   // NODE_ENV=test skips the in-process Vite dev server (three of those would be
@@ -54,15 +60,23 @@ function instance(port, env = {}) {
   }
 }
 
+/**
+ * One port per instance, consecutive from 3100. Deliberately clear of the
+ * compose `frontend` service on 3000 and the Defra ID stub on 3200.
+ */
+const defaultPort = 3100
+const sessionStorePort = 3101
+const shortAbsoluteTtlPort = 3102
+
 export const appInstances = {
   /** Default configuration: memory-backed sessions, production-like windows. */
-  app: instance(3100),
+  app: instance(defaultPort),
 
   /** Redis-backed sessions, so a test can inspect what is actually stored. */
-  sessionStore: instance(3101, { SESSION_CACHE_ENGINE: 'redis' }),
+  sessionStore: instance(sessionStorePort, { SESSION_CACHE_ENGINE: 'redis' }),
 
   /** Absolute session cap shrunk from four hours to seconds. */
-  shortAbsoluteTtl: instance(3102, {
+  shortAbsoluteTtl: instance(shortAbsoluteTtlPort, {
     SESSION_ABSOLUTE_TTL: String(shortAbsoluteTtlMs)
   })
 }

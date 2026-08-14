@@ -8,6 +8,9 @@ import { stubOrigin } from './stub.js'
  * provider, pick your organisation, land back in the service.
  */
 
+/** The redirect the app issues when it stops accepting a session. */
+const foundStatusCode = 302
+
 /** True once the browser has come back from the identity provider. */
 function isBackInTheService(url) {
   return url.origin !== stubOrigin
@@ -101,7 +104,7 @@ export async function expectSignedInAs(page, user, { organisation } = {}) {
 export async function expectRedirectToSignIn(page, path) {
   const response = await page.request.get(path, { maxRedirects: 0 })
 
-  expect(response.status()).toBe(302)
+  expect(response.status()).toBe(foundStatusCode)
 
   const location = response.headers().location
   expect(location).toContain('/auth/sign-in')

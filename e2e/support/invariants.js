@@ -10,8 +10,16 @@ import { expect } from '@playwright/test'
  * failure of the thing being tested.
  */
 
-/** Three base64url segments — the shape of any JWT the app handles. */
-const jwtPattern = /[\w-]{16,}\.[\w-]{16,}\.[\w-]{16,}/
+/**
+ * Three base64url segments — the shape of any JWT the app handles.
+ *
+ * The boundary lookarounds are what keep this linear: without them the engine
+ * retries the whole pattern from every position inside a long run of word
+ * characters, which is exactly what a log line or a cookie jar is full of.
+ * They cost nothing in matching power — a real token still starts and ends at
+ * a boundary, and any leading run is absorbed by the first segment anyway.
+ */
+const jwtPattern = /(?<![\w-])[\w-]{16,}\.[\w-]{16,}\.[\w-]{16,}(?![\w-])/
 
 export const sessionCookieName = 'userSession'
 

@@ -64,17 +64,16 @@ export async function findStoredSession(email) {
   return withRedis(async (client) => {
     for (const key of keys) {
       const raw = await client.get(key)
-      if (!raw) continue
-
       // catbox wraps the value: { item, stored, ttl }
-      const envelope = JSON.parse(raw)
-      if (envelope?.item?.email !== email) continue
+      const envelope = raw ? JSON.parse(raw) : null
 
-      return {
-        key,
-        session: envelope.item,
-        raw,
-        ttlRemainingMs: await client.pttl(key)
+      if (envelope?.item?.email === email) {
+        return {
+          key,
+          session: envelope.item,
+          raw,
+          ttlRemainingMs: await client.pttl(key)
+        }
       }
     }
 
@@ -93,9 +92,8 @@ export async function dropStoredSessions(email) {
   return withRedis(async (client) => {
     for (const key of keys) {
       const raw = await client.get(key)
-      if (!raw) continue
+      const envelope = raw ? JSON.parse(raw) : null
 
-      const envelope = JSON.parse(raw)
       if (envelope?.item?.email === email) {
         await client.del(key)
       }
