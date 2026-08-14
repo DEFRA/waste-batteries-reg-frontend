@@ -162,15 +162,18 @@ To test token refresh without waiting for expiry, force it:
 curl -X POST http://localhost:3200/cdp-defra-id-stub/API/register/86a7607c-a1e7-41e5-a0b6-a41680d05a2a/expire
 ```
 
-Manual journey checklist after auth changes:
+After auth changes, run the end-to-end journeys — they cover sign-in, redirect
+preservation, route protection, sign-out, the failure pages, token refresh,
+session storage, organisation switching and the absolute session cap, against
+the real stub:
 
-- Sign in from the header link; land back on the page you started from
-- Header shows the user's name and organisation with a Sign out link
-- `/auth/sign-in?redirect=/about` returns to `/about` after sign-in
-- Sign out; the back button asks you to sign in again rather than showing the page
-- `/auth/sign-in-oidc?error=access_denied` shows the "could not sign you in" page
-- A user whose roles all have `roleStatus` other than `3` gets the no-access page
-  on any scope-protected route
+```bash
+docker compose up -d cdp-defra-id-stub
+npm run test:e2e
+```
+
+See [e2e/README.md](e2e/README.md) for what each journey covers and how the
+suite is put together.
 
 In deployed environments the identity provider is set per environment:
 the CDP-hosted stub in `dev`, real Defra ID in `test`, `perf-test` and `prod` —

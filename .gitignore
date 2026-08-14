@@ -12,3 +12,7 @@ tsconfig.tsbuildinfo
 .env
 scratch
 .claude
+e2e/.logs
+playwright-report
+test-results
+.playwright
