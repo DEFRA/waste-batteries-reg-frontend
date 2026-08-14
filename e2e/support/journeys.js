@@ -77,7 +77,7 @@ export async function signInFromHeader(page, user, options = {}) {
 
 export async function signOut(page) {
   await page.getByRole('link', { name: 'Sign out' }).click()
-  await page.waitForURL(isBackInTheService)
+  await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
 }
 
 export async function expectSignedInAs(page, user, { organisation } = {}) {
