@@ -272,7 +272,16 @@ the [.github/example.dependabot.yml](.github/example.dependabot.yml) to `.github
 
 ### SonarCloud
 
-Instructions for setting up SonarCloud can be found in [sonar-project.properties](./sonar-project.properties).
+Code quality and coverage are analysed by
+[SonarCloud](https://sonarcloud.io/summary/new_code?id=DEFRA_waste-batteries-reg-frontend)
+on every pull request and on every publish. The quality gate appears as a check
+on the pull request; the badges at the top of this file track `main`.
+
+What is analysed is set in [sonar-project.properties](./sonar-project.properties)
+— `src/` is the production code, and the unit tests, the Playwright journeys and
+[test-helpers/](./test-helpers) are all declared as test code. Coverage comes
+from the `./coverage/lcov.info` that `npm test` writes, so the scan runs after
+the tests in each workflow.
 
 ## Licence
 
