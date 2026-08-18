@@ -17,6 +17,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          # Sonar reads git blame to work out what counts as new code, and it
+          # cannot do that from a one-commit clone
+          fetch-depth: 0
 
       - name: Test code and Create Test Coverage Reports
         uses: actions/setup-node@v6
@@ -40,12 +44,15 @@ jobs:
           docker build --no-cache --tag cdp-node-frontend-template .
           exit $?
 
-#      - name: SonarCloud Scan
-#        if: github.actor != 'dependabot[bot]'
-#        uses: SonarSource/sonarqube-scan-action@v5.3.1 #  (or check latest version on https://github.com/marketplace/actions/official-sonarqube-scan)
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # Runs last in this job so ./coverage/lcov.info from `npm test` above is
+      # on disk. Dependabot PRs cannot see the token, so they skip rather than
+      # fail. Version is on https://github.com/marketplace/actions/official-sonarqube-scan
+      - name: SonarCloud Scan
+        if: github.actor != 'dependabot[bot]'
+        uses: SonarSource/sonarqube-scan-action@v8.2.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   e2e:
     name: Run End-to-End Tests
@@ -114,10 +121,3 @@ jobs:
             compose-logs.txt
           retention-days: 7
           if-no-files-found: ignore
-
-#      - name: SonarCloud Scan
-#        if: github.actor != 'dependabot[bot]'
-#        uses: SonarSource/sonarqube-scan-action@v5.3.1 #  (or check latest version on https://github.com/marketplace/actions/official-sonarqube-scan)
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
