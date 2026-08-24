@@ -36,4 +36,31 @@ describe('#buildNavigation', () => {
       }
     ])
   })
+
+  test('Should show example navigation to signed-in users', () => {
+    expect(
+      buildNavigation(
+        mockRequest({
+          path: '/example',
+          auth: { isAuthenticated: true }
+        })
+      )
+    ).toEqual([
+      {
+        current: false,
+        text: 'Home',
+        href: '/'
+      },
+      {
+        current: false,
+        text: 'About',
+        href: '/about'
+      },
+      {
+        current: true,
+        text: 'Example',
+        href: '/example'
+      }
+    ])
+  })
 })
