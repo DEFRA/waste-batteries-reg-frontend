@@ -2,6 +2,7 @@ import { statusCodes } from '#/server/common/constants/status-codes.js'
 import { getExamples, saveExample } from './example-api.js'
 
 const pageTitle = 'Example'
+const exampleView = 'example/index'
 
 function viewContext(request, values = {}) {
   return {
@@ -31,7 +32,7 @@ export const exampleGetController = {
     }
 
     return h.view(
-      'example/index',
+      exampleView,
       viewContext(request, {
         exampleText,
         loadErrorMessage,
@@ -53,7 +54,7 @@ export const examplePostController = {
 
       return h
         .view(
-          'example/index',
+          exampleView,
           viewContext(request, {
             exampleText: request.payload.exampleText,
             errorMessage: 'There was a problem saving the example text'
@@ -73,7 +74,7 @@ export function exampleFailAction(request, h, error) {
 
   return h
     .view(
-      'example/index',
+      exampleView,
       viewContext(request, {
         exampleText: request.payload.exampleText,
         errorMessage: 'Enter example text'

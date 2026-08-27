@@ -6,6 +6,8 @@ import {
   examplePostController
 } from './controller.js'
 
+const maxExampleTextLength = 255
+
 /**
  * Sets up the routes used in the /example page.
  * These routes inherit the default session auth, so they are logged-in only.
@@ -26,7 +28,11 @@ export const example = {
           options: {
             validate: {
               payload: Joi.object({
-                exampleText: Joi.string().trim().min(1).max(255).required()
+                exampleText: Joi.string()
+                  .trim()
+                  .min(1)
+                  .max(maxExampleTextLength)
+                  .required()
               }).unknown(true),
               failAction: exampleFailAction
             }
