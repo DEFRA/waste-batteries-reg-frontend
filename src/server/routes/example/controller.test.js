@@ -149,4 +149,116 @@ describe('#exampleController', () => {
       }
     )
   })
+
+  test('Should show an error when saved example text cannot be loaded', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 500 }))
+    globalThis.fetch = fetchMock
+
+    const { result, statusCode } = await server.inject({
+      method: 'GET',
+      url: '/example',
+      auth: {
+        strategy: 'session',
+        credentials: {
+          id: 'user-123',
+          sessionId: 'sid',
+          scope: ['user'],
+          accessToken: 'access-token'
+        }
+      }
+    })
+
+    expect(statusCode).toBe(statusCodes.ok)
+    expect(result).toContain('There was a problem loading saved example text')
+  })
+
+  test('Should show an error when example text cannot be saved', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json([]))
+      .mockResolvedValueOnce(new Response('', { status: 500 }))
+    globalThis.fetch = fetchMock
+
+    const getResponse = await server.inject({
+      method: 'GET',
+      url: '/example',
+      auth: {
+        strategy: 'session',
+        credentials: {
+          id: 'user-123',
+          sessionId: 'sid',
+          scope: ['user'],
+          accessToken: 'access-token'
+        }
+      }
+    })
+
+    const { result, statusCode } = await server.inject({
+      method: 'POST',
+      url: '/example',
+      headers: {
+        cookie: cookieHeader(getResponse.headers['set-cookie'])
+      },
+      payload: {
+        crumb: extractCrumb(getResponse.result),
+        exampleText: 'Hello backend'
+      },
+      auth: {
+        strategy: 'session',
+        credentials: {
+          id: 'user-123',
+          sessionId: 'sid',
+          scope: ['user'],
+          accessToken: 'access-token'
+        }
+      }
+    })
+
+    expect(statusCode).toBe(statusCodes.internalServerError)
+    expect(result).toContain('There was a problem saving the example text')
+    expect(result).toContain('Hello backend')
+  })
+
+  test('Should show a validation error when example text is empty', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json([]))
+    globalThis.fetch = fetchMock
+
+    const getResponse = await server.inject({
+      method: 'GET',
+      url: '/example',
+      auth: {
+        strategy: 'session',
+        credentials: {
+          id: 'user-123',
+          sessionId: 'sid',
+          scope: ['user'],
+          accessToken: 'access-token'
+        }
+      }
+    })
+
+    const { result, statusCode } = await server.inject({
+      method: 'POST',
+      url: '/example',
+      headers: {
+        cookie: cookieHeader(getResponse.headers['set-cookie'])
+      },
+      payload: {
+        crumb: extractCrumb(getResponse.result),
+        exampleText: ''
+      },
+      auth: {
+        strategy: 'session',
+        credentials: {
+          id: 'user-123',
+          sessionId: 'sid',
+          scope: ['user'],
+          accessToken: 'access-token'
+        }
+      }
+    })
+
+    expect(statusCode).toBe(statusCodes.badRequest)
+    expect(result).toContain('Enter example text')
+  })
 })
