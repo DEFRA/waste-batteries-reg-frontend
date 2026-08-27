@@ -20,7 +20,7 @@ export const exampleGetController = {
     let loadErrorMessage
 
     try {
-      const examples = await getExamples(request.auth.credentials.id)
+      const examples = await getExamples(request.auth.credentials.accessToken)
       exampleText = examples.at(0)?.exampleText ?? ''
     } catch (error) {
       request.logger.error(
@@ -46,7 +46,7 @@ export const examplePostController = {
     try {
       await saveExample({
         exampleText: request.payload.exampleText,
-        userId: request.auth.credentials.id
+        accessToken: request.auth.credentials.accessToken
       })
     } catch (error) {
       request.logger.error(error, 'Could not save example text to the backend')

@@ -12,14 +12,19 @@ function backendUrl(path) {
   return new URL(path, config.get('wasteBatteriesRegBackendUrl'))
 }
 
-export async function getExamples(userId) {
+function backendHeaders(accessToken, extraHeaders = {}) {
+  return {
+    accept: 'application/json',
+    authorization: `Bearer ${accessToken}`,
+    ...extraHeaders
+  }
+}
+
+export async function getExamples(accessToken) {
   const url = backendUrl('/example')
-  url.searchParams.set('userId', userId)
 
   const response = await fetch(url, {
-    headers: {
-      accept: 'application/json'
-    }
+    headers: backendHeaders(accessToken)
   })
 
   if (!response.ok) {
@@ -32,14 +37,13 @@ export async function getExamples(userId) {
   return response.json()
 }
 
-export async function saveExample({ exampleText, userId }) {
+export async function saveExample({ exampleText, accessToken }) {
   const response = await fetch(backendUrl('/example'), {
     method: 'POST',
-    headers: {
-      accept: 'application/json',
+    headers: backendHeaders(accessToken, {
       'content-type': 'application/json'
-    },
-    body: JSON.stringify({ exampleText, userId })
+    }),
+    body: JSON.stringify({ exampleText })
   })
 
   if (!response.ok) {

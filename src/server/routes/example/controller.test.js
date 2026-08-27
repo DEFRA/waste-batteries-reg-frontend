@@ -57,7 +57,12 @@ describe('#exampleController', () => {
       url: '/example',
       auth: {
         strategy: 'session',
-        credentials: { id: 'user-123', sessionId: 'sid', scope: ['user'] }
+        credentials: {
+          id: 'user-123',
+          sessionId: 'sid',
+          scope: ['user'],
+          accessToken: 'access-token'
+        }
       }
     })
 
@@ -66,10 +71,11 @@ describe('#exampleController', () => {
     expect(result).toContain('Saved text')
     expect(result).toContain('name="crumb"')
     expect(fetchMock).toHaveBeenCalledWith(
-      new URL('/example?userId=user-123', 'http://localhost:3001'),
+      new URL('/example', 'http://localhost:3001'),
       {
         headers: {
-          accept: 'application/json'
+          accept: 'application/json',
+          authorization: 'Bearer access-token'
         }
       }
     )
@@ -94,7 +100,12 @@ describe('#exampleController', () => {
       url: '/example',
       auth: {
         strategy: 'session',
-        credentials: { id: 'user-123', sessionId: 'sid', scope: ['user'] }
+        credentials: {
+          id: 'user-123',
+          sessionId: 'sid',
+          scope: ['user'],
+          accessToken: 'access-token'
+        }
       }
     })
 
@@ -112,7 +123,12 @@ describe('#exampleController', () => {
       },
       auth: {
         strategy: 'session',
-        credentials: { id: 'user-123', sessionId: 'sid', scope: ['user'] }
+        credentials: {
+          id: 'user-123',
+          sessionId: 'sid',
+          scope: ['user'],
+          accessToken: 'access-token'
+        }
       }
     })
 
@@ -124,11 +140,11 @@ describe('#exampleController', () => {
         method: 'POST',
         headers: {
           accept: 'application/json',
-          'content-type': 'application/json'
+          'content-type': 'application/json',
+          authorization: 'Bearer access-token'
         },
         body: JSON.stringify({
-          exampleText: 'Hello backend',
-          userId: 'user-123'
+          exampleText: 'Hello backend'
         })
       }
     )
