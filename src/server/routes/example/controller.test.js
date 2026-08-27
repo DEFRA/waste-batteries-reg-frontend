@@ -151,7 +151,9 @@ describe('#exampleController', () => {
   })
 
   test('Should show an error when saved example text cannot be loaded', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 500 }))
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('', { status: 500 }))
     globalThis.fetch = fetchMock
 
     const { result, statusCode } = await server.inject({
