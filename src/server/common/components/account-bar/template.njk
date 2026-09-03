@@ -1,8 +1,8 @@
 {% if params is defined and params.name and params.organisationName %}
   <div class="govuk-width-container">
     <div class="defra-account-bar" data-testid="app-signed-in-user">
-      <div class="govuk-grid-row govuk-!-padding-top-3 govuk-!-padding-bottom-3">
-        <div class="govuk-grid-column-two-thirds-from-desktop defra-account-bar__headings ">
+      <div class="govuk-grid-row govuk-!-padding-top-3">
+        <div class="govuk-grid-column-two-thirds-from-desktop defra-account-bar__headings  govuk-!-margin-bottom-2">
           <span class="govuk-visually-hidden">Acting on behalf of </span>
           {{ params.organisationName }}
           {% if params.email %}
@@ -12,7 +12,7 @@
           {% endif %}
         </div>
 
-        <div class="govuk-grid-column-one-third-from-desktop defra-account-bar__headings defra-account-bar__headings--right-aligned">
+        <div class="govuk-grid-column-one-third-from-desktop defra-account-bar__headings defra-account-bar__headings--right-aligned govuk-!-margin-bottom-2">
           <span class="govuk-visually-hidden">Signed in as </span>
           {{ params.name }}
           <div class="govuk-!-font-size-16 govuk-!-font-weight-regular govuk-!-margin-top-1">
