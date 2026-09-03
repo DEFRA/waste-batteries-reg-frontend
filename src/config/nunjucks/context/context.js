@@ -1,9 +1,9 @@
-import path from 'node:path'
 import { readFileSync } from 'node:fs'
+import path from 'node:path'
 
 import { config } from '#/config/config.js'
-import { buildNavigation } from './build-navigation.js'
 import { createLogger } from '#/server/common/helpers/logging/logger.js'
+import { buildNavigation } from './build-navigation.js'
 
 const logger = createLogger()
 const assetPath = config.get('assetPath')
@@ -21,12 +21,12 @@ function buildAuthContext(request) {
     return { isAuthenticated: false }
   }
 
-  const credentials = request.auth.credentials
+  const { displayName, organisationName, email } =
+    request.auth.credentials ?? {}
+
   return {
     isAuthenticated: true,
-    displayName: credentials?.displayName,
-    organisationName: credentials?.organisationName,
-    email: credentials?.email
+    ...{ displayName, organisationName, email }
   }
 }
 
