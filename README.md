@@ -299,7 +299,6 @@ To match the SonarCloud pull request summary view, pass the pull request key:
 SONAR_TOKEN=your-token SONAR_PULL_REQUEST=6 ./sonarCloudLocal.sh
 ```
 
-
 ## Licence
 
 THIS INFORMATION IS LICENSED UNDER THE CONDITIONS OF THE OPEN GOVERNMENT LICENCE found at:
