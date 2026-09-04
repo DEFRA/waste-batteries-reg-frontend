@@ -16,3 +16,8 @@ e2e/.logs
 playwright-report
 test-results
 .playwright
+.sonar/
+.scannerwork/
+sonar-issues.json
+sonar-issues.md
+
