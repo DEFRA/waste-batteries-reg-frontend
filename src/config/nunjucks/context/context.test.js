@@ -77,6 +77,27 @@ describe('context and cache', () => {
         })
       })
 
+      test('Should expose email for authenticated users', () => {
+        const authenticatedContext = contextImport.context({
+          ...mockRequest,
+          auth: {
+            isAuthenticated: true,
+            credentials: {
+              displayName: 'Jo Bloggs',
+              organisationName: 'Acme Ltd',
+              email: 'jo.bloggs@example.com'
+            }
+          }
+        })
+
+        expect(authenticatedContext.auth).toEqual({
+          isAuthenticated: true,
+          displayName: 'Jo Bloggs',
+          organisationName: 'Acme Ltd',
+          email: 'jo.bloggs@example.com'
+        })
+      })
+
       describe('With valid asset path', () => {
         test('Should provide expected asset path', () => {
           expect(contextResult.getAssetPath('application.js')).toBe(

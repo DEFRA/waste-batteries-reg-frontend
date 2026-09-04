@@ -1,0 +1,25 @@
+{% if params is defined and params.name and params.organisationName %}
+  <div class="govuk-width-container">
+    <div class="defra-account-bar" data-testid="app-signed-in-user">
+      <div class="govuk-grid-row govuk-!-padding-top-3">
+        <div class="govuk-grid-column-two-thirds-from-desktop defra-account-bar__headings  govuk-!-margin-bottom-2">
+          <span class="govuk-visually-hidden">Acting on behalf of </span>
+          {{ params.organisationName }}
+          {% if params.email %}
+            <div class="govuk-body-s govuk-!-margin-top-1 govuk-!-margin-bottom-0">
+              {{ params.email }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="govuk-grid-column-one-third-from-desktop defra-account-bar__headings defra-account-bar__headings--right-aligned govuk-!-margin-bottom-2">
+          <span class="govuk-visually-hidden">Signed in as </span>
+          {{ params.name }}
+          <div class="govuk-!-font-size-16 govuk-!-font-weight-regular govuk-!-margin-top-1">
+            <a class="govuk-link govuk-link--no-visited-state" href="/auth/sign-out">Sign out</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}

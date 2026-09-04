@@ -5,6 +5,7 @@
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
 
 {# Import custom components globally #}
+{% from "account-bar/macro.njk" import appAccountBar %}
 {% from "heading/macro.njk" import appHeading %}
 
 {% set mainClasses = "app-main-wrapper" %}
@@ -36,18 +37,19 @@
     navigation: navigation
   }) }}
 
-  <div class="govuk-width-container">
-    {% if auth.isAuthenticated %}
-      <p class="govuk-body-s govuk-!-margin-top-2" data-testid="app-signed-in-user">
-        {{ auth.displayName }}{% if auth.organisationName %} — {{ auth.organisationName }}{% endif %} |
-        <a class="govuk-link" href="/auth/sign-out">Sign out</a>
-      </p>
-    {% else %}
+  {% if auth.isAuthenticated %}
+    {{ appAccountBar({
+      organisationName: auth.organisationName,
+      email: auth.email,
+      name: auth.displayName
+    }) }}
+  {% else %}
+    <div class="govuk-width-container">
       <p class="govuk-body-s govuk-!-margin-top-2">
         <a class="govuk-link" href="/auth/sign-in">Sign in</a>
       </p>
-    {% endif %}
-  </div>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block pageTitle %}
