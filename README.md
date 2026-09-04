@@ -283,6 +283,23 @@ What is analysed is set in [sonar-project.properties](./sonar-project.properties
 from the `./coverage/lcov.info` that `npm test` writes, so the scan runs after
 the tests in each workflow.
 
+To run the same scan locally:
+
+```bash
+SONAR_TOKEN=your-token ./sonarCloudLocal.sh
+```
+
+The script runs `npm test`, uploads the analysis with `@sonar/scan`, then writes
+unresolved issues to `sonar-issues.json` and, when `python3` is available, a
+copy/paste friendly `sonar-issues.md`.
+
+To match the SonarCloud pull request summary view, pass the pull request key:
+
+```bash
+SONAR_TOKEN=your-token SONAR_PULL_REQUEST=6 ./sonarCloudLocal.sh
+```
+
+
 ## Licence
 
 THIS INFORMATION IS LICENSED UNDER THE CONDITIONS OF THE OPEN GOVERNMENT LICENCE found at:
