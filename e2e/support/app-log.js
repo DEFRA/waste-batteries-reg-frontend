@@ -6,9 +6,9 @@ import { logFileForBaseUrl } from './app-instances.js'
 /**
  * Reads the log of whichever app instance is serving the current project.
  *
- * Playwright pipes each instance's stdout to its own file (see the webServer
- * commands), which is how a test can assert both the lines the app is supposed
- * to write and the token contents it must never write.
+ * Playwright starts each instance via run-test-server.js, which redirects
+ * stdout/stderr to its own file. That is how a test can assert both the lines
+ * the app is supposed to write and the token contents it must never write.
  */
 
 export async function readAppLog(baseUrl) {

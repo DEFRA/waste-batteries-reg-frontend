@@ -52,11 +52,15 @@ export default defineConfig({
 
   webServer: Object.values(appInstances).map((instance) => ({
     // Logs go to a file so tests can assert on them — one of the four
-    // "must never see" invariants is "no token contents in the app's logs"
-    command: `mkdir -p e2e/.logs && node e2e/support/test-server.js > ${instance.logFile} 2>&1`,
+    // "must never see" invariants is "no token contents in the app's logs".
+    // run-test-server.js does the redirect in Node so this works on Windows.
+    command: 'node e2e/support/run-test-server.js',
     url: `${instance.url}/health`,
     reuseExistingServer: false,
     timeout: 60000,
-    env: instance.env
+    env: {
+      ...instance.env,
+      E2E_LOG_FILE: instance.logFile
+    }
   }))
 })
