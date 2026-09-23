@@ -1,6 +1,9 @@
 .DS_Store
+Thumbs.db
+Desktop.ini
 .npm/
 .vscode
+.vs
 .idea
 .public
 node_modules
@@ -20,4 +23,5 @@ test-results
 .scannerwork/
 sonar-issues.json
 sonar-issues.md
+zap-reports/
 
