@@ -58,6 +58,11 @@ jobs:
     name: Run End-to-End Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      COMPOSE_FILE_ARGS: -f compose.yml -f compose-github.override-zap.yml
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -83,9 +88,18 @@ jobs:
 
       # The journeys sign in against the real Defra ID stub, read sessions out of
       # Redis, and drive the compose `frontend` service for the containerised
-      # journey — so the whole stack comes up, not just the stub
+      # journey — so the whole stack comes up, not just the stub. ZAP is started
+      # here too so Playwright can proxy Chromium through it.
       - name: Start supporting services
-        run: docker compose up -d --wait floci redis cdp-defra-id-stub frontend
+        id: start-compose
+        run: |
+          mkdir -p zap-reports
+          docker compose ${COMPOSE_FILE_ARGS} up -d --wait floci redis cdp-defra-id-stub frontend
+          # ZAP is started without --wait: the image healthcheck probes localhost,
+          # which the overlay remaps to the host gateway, so --wait would hang
+          # until we override it — and even then the daemon can take >60s.
+          # Readiness is the root-CA fetch in the next step.
+          docker compose ${COMPOSE_FILE_ARGS} up -d zap
 
       # `--wait` only waits for a container to be running when it has no
       # healthcheck, and the containerised journey skips itself against an app
@@ -99,18 +113,48 @@ jobs:
             sleep 2
           done
           echo "The compose frontend service did not become healthy"
-          docker compose logs frontend
+          docker compose ${COMPOSE_FILE_ARGS} logs frontend
+          exit 1
+
+      # Root CA fetch is the readiness probe and also the cert Node needs if
+      # anything HTTPS is intercepted. Two minutes: -silent still leaves a
+      # slow JVM + CA generation on first boot.
+      - name: Prepare ZAP
+        run: |
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8080/OTHER/core/other/rootcert/ -o "$RUNNER_TEMP/zap-root-ca.pem"; then
+              echo "NODE_EXTRA_CA_CERTS=$RUNNER_TEMP/zap-root-ca.pem" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ZAP did not become ready on port 8080"
+          docker compose ${COMPOSE_FILE_ARGS} logs zap
           exit 1
 
       - name: Run end-to-end tests
+        id: e2e-tests
+        env:
+          ZAP_PROXY_URL: http://127.0.0.1:8080
+          ZAP_PROXY_API_URL: http://127.0.0.1:8080
         run: npm run test:e2e
+
+      # The @zap spec writes these too; this catches the case where journeys
+      # fail and the dependent zap project never runs.
+      - name: Export ZAP reports
+        if: always()
+        run: |
+          mkdir -p zap-reports
+          curl -fsS http://127.0.0.1:8080/OTHER/core/other/htmlreport/ -o zap-reports/zap-report.html || true
+          curl -fsS http://127.0.0.1:8080/OTHER/core/other/jsonreport/ -o zap-reports/zap-report.json || true
 
       - name: Collect service logs
         if: failure()
-        run: docker compose logs --no-color > compose-logs.txt
+        run: docker compose ${COMPOSE_FILE_ARGS} logs --no-color > compose-logs.txt
 
       - name: Upload test artefacts
         if: always()
+        id: upload-report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
@@ -121,3 +165,36 @@ jobs:
             compose-logs.txt
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Upload ZAP report
+        if: always()
+        id: upload-zap-report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-test-report
+          path: zap-reports/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Comment test report links on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const statusEmoji = '${{ steps.e2e-tests.outcome }}' === 'success' ? '✅' : '❌';
+            const playwrightLine = '${{ steps.upload-report.outcome }}' === 'success'
+              ? `\n\n📥 [Download Playwright Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload-report.outputs.artifact-id }})`
+              : '';
+            const zapLine = '${{ steps.upload-zap-report.outcome }}' === 'success'
+              ? `\n\n🔒 [Download ZAP Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload-zap-report.outputs.artifact-id }})`
+              : '';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📊 End-to-end test report ${statusEmoji}\n\nThe Playwright and ZAP reports have been generated and are available as artefacts.${playwrightLine}${zapLine}`
+            })
+
+      - name: Stop Docker Compose services
+        if: always() && steps.start-compose.outcome == 'success'
+        run: docker compose ${COMPOSE_FILE_ARGS} down

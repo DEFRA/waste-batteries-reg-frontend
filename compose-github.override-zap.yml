@@ -1,0 +1,76 @@
+# ZAP overlay — merge after compose.yml.
+#
+# Start the same named services CI uses; do not `up --wait` the whole file.
+# A full-stack wait also brings up mongodb and will fail if floci exits after
+# its init hook, or if ZAP's image healthcheck is still probing `localhost`
+# (see extra_hosts below).
+#
+#   docker compose -f compose.yml -f compose-github.override-zap.yml \
+#     up -d --wait floci redis cdp-defra-id-stub frontend
+#   docker compose -f compose.yml -f compose-github.override-zap.yml up -d zap
+#
+# Host vs in-network URLs:
+# - From other Compose services on cdp-tenant: http://zap:8080
+# - From the host (Playwright / Node on the GitHub runner or your laptop):
+#   http://127.0.0.1:8080
+#   (hostname "zap" only resolves inside the Compose network — not from Node
+#   on the CI runner.)
+#
+# extra_hosts is on here on purpose. DWT can leave it commented out because
+# Selenium Chrome runs inside Compose and talks to in-network hostnames.
+# Batteries runs Playwright Chromium on the runner host, and every origin the
+# journeys hit is localhost (apps on 3100–3102, compose frontend on 3000,
+# Defra ID stub on 3200). ZAP therefore sees Host: localhost:<port> and must
+# open those ports on the host, not inside its own container.
+#
+# The image's default healthcheck curls http://localhost:$ZAP_PORT/ — that
+# hostname now points at the host gateway, so the probe is unhealthy forever
+# and `compose --wait` never returns. Override it to 127.0.0.1.
+#
+# -silent skips ZAP's call-home / addon autoupdate, which otherwise keeps the
+# API flaky for a minute after the daemon binds 8080.
+#
+# Trust ZAP MITM TLS in Node: export the root CA to a host-writable path
+# (not ./zap-reports — that directory is bind-mounted and owned by the
+# container user after compose starts).
+#   curl -f http://127.0.0.1:8080/OTHER/core/other/rootcert/ -o /tmp/zap-root-ca.pem
+#   export NODE_EXTRA_CA_CERTS=/tmp/zap-root-ca.pem
+services:
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    user: zap
+    environment:
+      ZAP_PORT: '8080'
+      ZAP_REPORTS_DIR: /home/zap/reports
+    volumes:
+      - ./zap-reports:/home/zap/reports:z
+    command:
+      - zap.sh
+      - -daemon
+      - -silent
+      - -host
+      - 0.0.0.0
+      - -port
+      - '8080'
+      - -config
+      - api.addrs.addr.name=.*
+      - -config
+      - api.addrs.addr.regex=true
+      - -config
+      - api.disablekey=true
+    ports:
+      - '8080:8080'
+    extra_hosts:
+      - 'localhost:host-gateway'
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'curl --silent --output /dev/null --fail http://127.0.0.1:8080/ || exit 1'
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 90s
+    networks:
+      - cdp-tenant

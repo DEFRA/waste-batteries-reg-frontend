@@ -24,6 +24,7 @@ Core delivery platform Node.js Frontend Template
   - [Docker Compose](#docker-compose)
   - [Dependabot](#dependabot)
   - [SonarCloud](#sonarcloud)
+  - [Security scanning (ZAP)](#security-scanning-zap)
 - [Licence](#licence)
   - [About the licence](#about-the-licence)
 
@@ -298,6 +299,30 @@ To match the SonarCloud pull request summary view, pass the pull request key:
 ```bash
 SONAR_TOKEN=your-token SONAR_PULL_REQUEST=6 ./sonarCloudLocal.sh
 ```
+
+### Security scanning (ZAP)
+
+Every pull request runs a **passive** [OWASP ZAP](https://www.zaproxy.org/)
+scan as part of the `e2e` job. Playwright Chromium is proxied through a ZAP
+daemon started from
+[compose-github.override-zap.yml](./compose-github.override-zap.yml), so the
+journeys generate the traffic ZAP inspects. There is no separate scan job.
+
+The pull request fails if ZAP reports any **High** alerts against this app
+(the compose frontend on port 3000 and the Playwright instances on
+3100–3102). The `@zap` spec waits until ZAP's passive scan queue is empty
+before it reads those alerts. Medium and Low findings stay in the report;
+they do not fail the check. Traffic to the Defra ID stub on port 3200 is
+proxied too, but stub findings are excluded from the High gate.
+
+The HTML and JSON reports are uploaded as the `zap-test-report` artefact and
+linked from a comment on the pull request, alongside the Playwright report.
+
+ZAP is CI/test-only — it does not change app runtime config. The
+[Proxy](#proxy) section above is the **app outbound** `HTTP_PROXY` / undici
+dispatcher, which is unrelated.
+
+To run the same scan locally, see [e2e/README.md](e2e/README.md#owasp-zap).
 
 ## Licence
 

@@ -3,7 +3,8 @@
 Playwright journeys, grouped by area under [journeys/](journeys). Everything
 here today is [journeys/auth/](journeys/auth) — the Defra ID integration, driven
 against the real [cdp-defra-id-stub](https://github.com/DEFRA/cdp-defra-id-stub)
-with nothing about auth mocked.
+with nothing about auth mocked — and [journeys/zap/](journeys/zap), a post-suite
+assertion against OWASP ZAP when the proxy is on.
 
 ## Running them
 
@@ -30,7 +31,8 @@ Every pull request runs the whole suite in the `e2e` job of
 [check-pull-request.yml](../.github/workflows/check-pull-request.yml), which
 brings the same compose stack up first so the containerised journey runs there
 too. The HTML report and the app logs from a run are uploaded as the
-`playwright-report` artefact.
+`playwright-report` artefact. The same job proxies Chromium through ZAP and
+uploads `zap-test-report` — see [OWASP ZAP](#owasp-zap).
 
 ## Adding an area
 
@@ -48,7 +50,9 @@ different axes:
 So a new area needs a folder and a tag, and nothing in
 [playwright.config.js](../playwright.config.js) unless it also needs its own app
 configuration. Anything genuinely shared across areas belongs in
-[support/](support); anything auth-specific stays with the auth journeys.
+[support/](support); anything auth-specific stays with the auth journeys. The
+ZAP gate is the exception — it is a project that depends on the journeys, not
+another product area.
 
 ## How it is put together
 
@@ -131,3 +135,75 @@ message rather than a screenful of timeouts.
 - **Expiring a stub user is not reversible within a run**, so anything that uses
   the stub's `/expire` endpoint needs a fixture of its own and a re-registration
   afterwards.
+
+## OWASP ZAP
+
+Every pull request proxies Playwright Chromium through a ZAP daemon and then
+runs [journeys/zap/alerts.spec.js](journeys/zap/alerts.spec.js) (`@zap`). That
+spec waits until ZAP's passive scan queue is empty, writes HTML and JSON
+reports to `zap-reports/`, and fails if any **High** alert was raised against
+the batteries apps (ports 3000, 3100–3102). Medium and
+Low stay in the report. The Defra ID stub on port 3200 is also proxied, but
+its findings are excluded from the High gate.
+
+Without the ZAP env vars, `npm run test:e2e` is unchanged — the zap project is
+not registered, so the spec is ignored.
+
+### Running locally
+
+Start the same named services CI uses, then start ZAP. Do not
+`up -d --wait` the whole compose file — that also waits on mongodb, and
+`--wait` on ZAP hangs because the image healthcheck probes `localhost`
+(remapped to the host by `extra_hosts`).
+
+```bash
+docker compose -f compose.yml -f compose-github.override-zap.yml \
+  up -d --wait floci redis cdp-defra-id-stub frontend
+docker compose -f compose.yml -f compose-github.override-zap.yml up -d zap
+```
+
+Wait until the daemon answers on the **host** URL, not `http://zap:8080` —
+that hostname only resolves inside the Compose network:
+
+```bash
+curl -fsS http://127.0.0.1:8080/OTHER/core/other/rootcert/ -o /tmp/zap-root-ca.pem
+export NODE_EXTRA_CA_CERTS=/tmp/zap-root-ca.pem
+export ZAP_PROXY_URL=http://127.0.0.1:8080
+export ZAP_PROXY_API_URL=http://127.0.0.1:8080
+npm run test:e2e
+docker compose -f compose.yml -f compose-github.override-zap.yml down
+```
+
+On PowerShell:
+
+```powershell
+curl.exe -fsS http://127.0.0.1:8080/OTHER/core/other/rootcert/ -o "$env:TEMP\zap-root-ca.pem"
+$env:NODE_EXTRA_CA_CERTS = "$env:TEMP\zap-root-ca.pem"
+$env:ZAP_PROXY_URL = 'http://127.0.0.1:8080'
+$env:ZAP_PROXY_API_URL = 'http://127.0.0.1:8080'
+npm run test:e2e
+docker compose -f compose.yml -f compose-github.override-zap.yml down
+```
+
+Run the **full** suite, not `--grep @zap` on its own. The zap project depends on
+the journeys so there is traffic to inspect; grep would filter those journeys
+out and the scan would be empty.
+
+Always bring the overlay stack down afterwards, including when the suite fails.
+
+### Chromium and localhost
+
+Chrome skips the proxy for loopback addresses unless it is launched with
+`--proxy-bypass-list=<-loopback>`. [playwright.config.js](../playwright.config.js)
+adds that flag whenever `ZAP_PROXY_URL` is set. Every batteries origin is
+localhost, so without it the report would be empty and `@zap` would pass for
+the wrong reason. The spec treats "ZAP saw no app origin" as a failure.
+
+### Reading the reports
+
+After a run, open `zap-reports/zap-report.html` (or the JSON next to it). CI
+uploads that directory as the `zap-test-report` artefact and comments the
+download link on the pull request.
+
+`zap-reports/` is gitignored. Compose bind-mounts it into the daemon as
+`/home/zap/reports`.

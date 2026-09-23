@@ -2,6 +2,10 @@ import { defineConfig, devices } from '@playwright/test'
 
 import { appInstances } from './e2e/support/app-instances.js'
 
+const zapProxyUrl = process.env.ZAP_PROXY_URL
+const zapProxyApiUrl = process.env.ZAP_PROXY_API_URL
+const desktopChrome = devices['Desktop Chrome']
+
 /**
  * End-to-end tests.
  *
@@ -10,6 +14,10 @@ import { appInstances } from './e2e/support/app-instances.js'
  *
  *   npm run test:e2e -- --grep @auth      just the auth journeys
  *   npm run test:e2e -- --grep-invert @auth   everything else
+ *
+ * When ZAP_PROXY_URL / ZAP_PROXY_API_URL are set, Chromium is proxied
+ * through the ZAP daemon and a @zap project runs after the journeys.
+ * Without those env vars the suite behaves exactly as it does today.
  *
  * The auth journeys drive the real app against the real cdp-defra-id-stub, so
  * the stub must be running before `npm run test:e2e`:
@@ -41,14 +49,48 @@ export default defineConfig({
   expect: { timeout: 10000 },
 
   use: {
-    ...devices['Desktop Chrome'],
+    ...desktopChrome,
     // The instance a spec gets unless it declares another with test.use
     baseURL: appInstances.app.url,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     // The stub lives on a different origin; nothing here should ignore its certs
-    ignoreHTTPSErrors: false
+    ignoreHTTPSErrors: false,
+    ...(zapProxyUrl
+      ? {
+          proxy: { server: zapProxyUrl },
+          launchOptions: {
+            ...desktopChrome.launchOptions,
+            args: [
+              ...(desktopChrome.launchOptions?.args ?? []),
+              // Chrome skips the proxy for localhost unless we punch a hole
+              // in the default loopback bypass. Every batteries origin is
+              // localhost, so without this the scan would be empty.
+              '--proxy-bypass-list=<-loopback>'
+            ]
+          }
+        }
+      : {})
   },
+
+  // @zap cannot run before traffic exists. Local `npm run test:e2e` without
+  // the ZAP env vars never registers the zap project, so the new spec is
+  // ignored rather than failing against a daemon that is not there.
+  projects: [
+    {
+      name: 'journeys',
+      testIgnore: '**/zap/**'
+    },
+    ...(zapProxyApiUrl
+      ? [
+          {
+            name: 'zap',
+            testMatch: '**/zap/**',
+            dependencies: ['journeys']
+          }
+        ]
+      : [])
+  ],
 
   webServer: Object.values(appInstances).map((instance) => ({
     // Logs go to a file so tests can assert on them — one of the four
