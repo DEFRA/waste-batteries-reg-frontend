@@ -7,25 +7,22 @@ const retryDelayMs = 2000
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-async function fetchDiscoveryDocument(url) {
-  let lastError
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(
-          `Defra ID discovery failed: ${response.status} from ${url}`
-        )
-      }
-      return await response.json()
-    } catch (error) {
-      lastError = error
-      if (attempt < maxAttempts) await wait(retryDelayMs)
+async function fetchDiscoveryDocument(url, attempt = 1) {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(
+        `Defra ID discovery failed: ${response.status} from ${url}`
+      )
     }
+    return response.json()
+  } catch (error) {
+    if (attempt >= maxAttempts) {
+      throw error
+    }
+    await wait(retryDelayMs)
+    return fetchDiscoveryDocument(url, attempt + 1)
   }
-
-  throw lastError
 }
 
 export async function getOidcConfig() {
