@@ -5,6 +5,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     clearMocks: true,
+    // Vitest 5 starts one worker per file. Importing the server in beforeAll
+    // can exceed the 10s default when every file loads at once.
+    hookTimeout: 30000,
     setupFiles: ['./test-helpers/oidc-stub.js'],
     // The e2e suite is Playwright's; it drives a running app and a running
     // Defra ID stub, so vitest must not try to collect it
