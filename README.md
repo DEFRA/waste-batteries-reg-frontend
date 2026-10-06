@@ -32,13 +32,27 @@ Core delivery platform Node.js Frontend Template
 
 ### Node.js
 
-Please install Node Version Manager [nvm](https://github.com/creationix/nvm)
+This service uses Node.js 26.10.0. The version is pinned in [`.nvmrc`](./.nvmrc), and `package.json` requires Node.js 26 or newer. GitHub Actions reads `.nvmrc`, so pull request and publish workflows use the same version. The Docker image uses the DEFRA parent image `defradigital/node:3.2.3-node26.10.0`.
 
-To use the correct version of Node.js for this application, via nvm:
+Install Node.js with a version manager, then install the version in `.nvmrc`.
+
+**Windows** ([nvm for Windows](https://github.com/coreybutler/nvm-windows)):
+
+```powershell
+nvm install 26.10.0
+nvm use 26.10.0
+node -v
+```
+
+`node -v` should print `v26.10.0`. In this repository the nvm shim also follows `.nvmrc`, so commands run from the repo use 26.10.0 once that version is installed.
+
+**macOS and Linux** ([nvm](https://github.com/nvm-sh/nvm)):
 
 ```bash
 cd waste-batteries-reg-frontend
+nvm install
 nvm use
+node -v
 ```
 
 ## Server-side Caching

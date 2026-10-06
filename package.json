@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "type": "module",
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "scripts": {
     "build:frontend": "vite build",
@@ -57,13 +57,12 @@
     "blankie": "^5.0.0",
     "convict": "^6.2.5",
     "convict-format-with-validator": "^6.2.0",
-    "cssnano": "^8.0.10",
-    "cssnano-preset-default": "^8.0.10",
     "date-fns": "^4.4.0",
     "govuk-frontend": "^6.5.1",
     "hapi-pino": "^13.0.0",
     "hapi-pulse": "^4.0.0",
     "ioredis": "^6.0.0",
+    "joi": "^17.13.8",
     "jose": "^6.2.12",
     "lodash": "^4.18.1",
     "nunjucks": "^3.2.4",
@@ -76,6 +75,8 @@
     "@playwright/test": "^1.63.0",
     "@vitest/coverage-v8": "^5.0.2",
     "cheerio": "^1.2.0",
+    "cssnano": "^9.1.2",
+    "cssnano-preset-default": "^9.1.2",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.5",
     "husky": "^9.1.7",
