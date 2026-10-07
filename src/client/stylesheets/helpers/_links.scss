@@ -1,13 +1,15 @@
-// Example SASS helpers
+// Example SASS helpers.
+// Hover and focus are separate mixins so each one is included on a real
+// selector. Nested "&" inside a mixin has no scoping root.
 
 @mixin app-link-style {
   text-decoration: none;
+}
 
-  &:hover {
-    text-decoration: underline;
-  }
+@mixin app-link-hover {
+  text-decoration: underline;
+}
 
-  &:focus {
-    text-decoration: none;
-  }
+@mixin app-link-focus {
+  text-decoration: none;
 }
