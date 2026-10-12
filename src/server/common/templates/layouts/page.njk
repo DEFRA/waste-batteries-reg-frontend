@@ -22,7 +22,9 @@
   <link href="{{ getAssetPath('src/client/stylesheets/application.scss') }}" rel="stylesheet">
 {% endblock %}
 
-{% block header %}
+{# Override the inner header/footer blocks, not header/footer themselves —
+   those hold GOV.UK's <header> and <footer> landmarks #}
+{% block govukHeader %}
   {# serviceName being used in govukHeader will be @deprecated in v6. It has moved to govukServiceNavigation - https://github.com/alphagov/govuk-frontend/blob/main/CHANGELOG.md#move-service-name-and-navigation-links-from-the-govuk-header-to-service-navigation-component #}
   {{ govukHeader({
     homepageUrl: "https://www.gov.uk/",
@@ -32,11 +34,15 @@
     serviceUrl: serviceUrl,
     useTudorCrown: true
   }) }}
+{% endblock %}
 
+{% block govukServiceNavigation %}
   {{ govukServiceNavigation({
     navigation: navigation
   }) }}
+{% endblock %}
 
+{% block headerEnd %}
   {% if auth.isAuthenticated %}
     {{ appAccountBar({
       organisationName: auth.organisationName,
@@ -66,7 +72,7 @@
 
 {% block content %}{% endblock %}
 
-{% block footer %}
+{% block govukFooter %}
   {{ govukFooter({
     meta: {
       items: [

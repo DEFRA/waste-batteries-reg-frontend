@@ -1,5 +1,13 @@
 import { statusCodes } from '../constants/status-codes.js'
 
+// Body copy from the GOV.UK "Page not found" and "There is a problem with
+// the service" patterns
+const pageNotFoundBody = [
+  'If you typed the web address, check it is correct.',
+  'If you pasted the web address, check you copied the entire address.'
+]
+const tryAgainLaterBody = ['Try again later.']
+
 function statusCodeMessage(statusCode) {
   switch (statusCode) {
     case statusCodes.notFound:
@@ -42,8 +50,11 @@ export function catchAll(request, h) {
   return h
     .view('error/index', {
       pageTitle: errorMessage,
-      heading: statusCode,
-      message: errorMessage
+      heading: errorMessage,
+      body:
+        statusCode === statusCodes.notFound
+          ? pageNotFoundBody
+          : tryAgainLaterBody
     })
     .code(statusCode)
 }

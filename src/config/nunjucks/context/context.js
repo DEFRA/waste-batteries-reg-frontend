@@ -14,6 +14,10 @@ const manifestPath = path.join(
 
 let viteManifest
 
+// Mirrors static-assets.js: only local dev runs the Vite middleware, every
+// other environment (including the e2e test server) serves the built files
+const usesBuiltAssets = () => config.get('isProduction') || config.get('isTest')
+
 // The session cookie strategy puts the whole cached session in credentials.
 // Expose only what views need — never token contents.
 function buildAuthContext(request) {
@@ -31,7 +35,7 @@ function buildAuthContext(request) {
 }
 
 export function context(request) {
-  if (config.get('isProduction') && !viteManifest) {
+  if (usesBuiltAssets() && !viteManifest) {
     try {
       viteManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
     } catch (error) {
@@ -47,7 +51,7 @@ export function context(request) {
     breadcrumbs: [],
     navigation: buildNavigation(request),
     getAssetPath(asset) {
-      if (!config.get('isProduction')) {
+      if (!usesBuiltAssets()) {
         return `${assetPath}/${asset}`
       }
 

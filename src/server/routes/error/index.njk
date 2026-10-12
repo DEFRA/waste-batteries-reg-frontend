@@ -7,7 +7,9 @@
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
-      <p>{{ message }}</p>
+      {% for paragraph in body %}
+        <p class="govuk-body">{{ paragraph }}</p>
+      {% endfor %}
     </div>
   </div>
 {% endblock %}
