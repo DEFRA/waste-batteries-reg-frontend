@@ -1,10 +1,16 @@
 # End-to-end tests
 
-Playwright journeys, grouped by area under [journeys/](journeys). Everything
-here today is [journeys/auth/](journeys/auth) — the Defra ID integration, driven
-against the real [cdp-defra-id-stub](https://github.com/DEFRA/cdp-defra-id-stub)
-with nothing about auth mocked — and [journeys/zap/](journeys/zap), a post-suite
-assertion against OWASP ZAP when the proxy is on.
+Playwright journeys, grouped by area under [journeys/](journeys):
+
+- [journeys/auth/](journeys/auth), tagged `@auth` — the Defra ID integration,
+  driven against the real
+  [cdp-defra-id-stub](https://github.com/DEFRA/cdp-defra-id-stub) with nothing
+  about auth mocked
+- [journeys/accessibility/](journeys/accessibility), tagged `@a11y` — an axe
+  scan of every page to WCAG 2.2 AA plus axe best practice, and a check that
+  each page title matches its heading
+- [journeys/zap/](journeys/zap) — a post-suite assertion against OWASP ZAP when
+  the proxy is on
 
 ## Running them
 

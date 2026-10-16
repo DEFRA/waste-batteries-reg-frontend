@@ -69,15 +69,16 @@
     "pino": "^10.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@babel/core": "^8.0.6",
     "@babel/preset-env": "^8.0.6",
     "@defra/hapi-connect": "^1.0.1",
     "@playwright/test": "^1.63.0",
     "@vitest/coverage-v8": "^5.0.2",
     "cheerio": "^1.2.0",
+    "cross-env": "^10.1.0",
     "cssnano": "^9.1.2",
     "cssnano-preset-default": "^9.1.2",
-    "cross-env": "^10.1.0",
     "eslint": "^9.39.5",
     "husky": "^9.1.7",
     "neostandard": "^0.13.0",

@@ -6,7 +6,8 @@ const exampleView = 'example/index'
 
 function viewContext(request, values = {}) {
   return {
-    pageTitle,
+    // GOV.UK validation pattern: screen readers announce the title first
+    pageTitle: values.errorMessage ? `Error: ${pageTitle}` : pageTitle,
     heading: pageTitle,
     breadcrumbs: [{ text: 'Home', href: '/' }, { text: pageTitle }],
     crumb: request.plugins.crumb,
